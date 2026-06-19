@@ -97,6 +97,19 @@ sudo ./install-ubuntu-external.sh --source /mnt/ubuntu-installer --target /dev/d
 
 The source must not live on the same disk as the target.
 
+## Copy Progress
+
+Copying the Ubuntu filesystem is usually the longest step. The installer prints an approximate source size and a time warning before this starts. With the default `--copy-progress periodic`, it prints a short status update every 30 seconds, which stays readable in both terminals and automation logs.
+
+You can override that behavior:
+
+```bash
+--copy-progress detailed
+--copy-progress never
+```
+
+`detailed` uses rsync's live aggregate progress output. `never` prints only the starting warning and final rsync summary.
+
 ## Safety Options
 
 Useful target guards:
@@ -240,9 +253,7 @@ make test
 make help
 ```
 
-The destructive loopback/manual tests are still planned; see `PLAN.md`.
-
-GitHub Actions runs `make check` on push and pull requests without downloading full Ubuntu ISOs. Real USB boot validation remains manual; use `tests/manual-boot-checklist.md`.
+GitHub Actions runs `make check` on push and pull requests without downloading full Ubuntu ISOs. Loopback testing is available in `tests/run-loopback.sh` for local destructive test environments. Real USB boot validation remains manual; use `tests/manual-boot-checklist.md`.
 
 ## Repository Metadata
 

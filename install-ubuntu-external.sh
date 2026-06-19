@@ -2,7 +2,7 @@
 set -euo pipefail
 
 INSTALLER_NAME="install-ubuntu-external"
-INSTALLER_VERSION="0.1.0"
+INSTALLER_VERSION="0.2.0"
 
 ISO_PATH=""
 SOURCE_DIR=""
@@ -34,6 +34,8 @@ APT_MIRROR="https://archive.ubuntu.com/ubuntu/"
 SECURITY_MIRROR="https://security.ubuntu.com/ubuntu/"
 POST_INSTALL_SCRIPT=""
 SKIP_FINALIZE=0
+COPY_PROGRESS="periodic"
+COPY_STATUS_INTERVAL=30
 TARGET_MNT=""
 WORK_DIR=""
 SOURCE_MOUNT=""
@@ -48,6 +50,7 @@ UBUNTU_VERSION="unknown"
 INSTALL_LOG=""
 TARGET_MODIFIED=0
 RESOLV_BACKUP_PATH=""
+ACTIVE_RSYNC_PID=""
 
 declare -a CREATED_MOUNTS=()
 
@@ -107,6 +110,7 @@ Install behavior:
   --security-mirror URL      Ubuntu security mirror
   --post-install-script PATH Run script inside target chroot near the end
   --skip-finalize            Test mode: skip chroot package/user/GRUB work
+  --copy-progress MODE       periodic, detailed, or never; default periodic
 
 Control:
   --dry-run                  Validate inputs and print the plan only
@@ -149,6 +153,7 @@ parse_args() {
       --security-mirror) SECURITY_MIRROR="${2:-}"; shift 2 ;;
       --post-install-script) POST_INSTALL_SCRIPT="${2:-}"; shift 2 ;;
       --skip-finalize) SKIP_FINALIZE=1; shift ;;
+      --copy-progress) COPY_PROGRESS="${2:-}"; shift 2 ;;
       --version) echo "${INSTALLER_NAME} ${INSTALLER_VERSION}"; exit 0 ;;
       --help|-h) usage; exit 0 ;;
       *) die "unknown option: $1" ;;
@@ -201,7 +206,7 @@ dependency_package_hint() {
     udevadm) echo "udev" ;;
     mount|umount|losetup|blockdev) echo "util-linux" ;;
     chroot) echo "coreutils" ;;
-    awk|sed|sort|xargs|find) echo "coreutils/findutils" ;;
+    awk|sed|sort|xargs|find|du) echo "coreutils/findutils" ;;
     *) echo "" ;;
   esac
 }
@@ -209,7 +214,7 @@ dependency_package_hint() {
 check_host_dependencies() {
   local missing=() cmd hint
   local required=(
-    awk sed sort xargs find grep head tail tr date tee cp rm mkdir chmod sleep readlink basename dirname
+    awk sed sort xargs find grep head tail tr date tee cp rm mkdir chmod sleep readlink basename dirname du
     lsblk findmnt blkid sgdisk wipefs mkfs.vfat mkfs.ext4 swapon swapoff
     mount umount rsync chroot blockdev udevadm
   )
@@ -270,6 +275,7 @@ validate_options() {
   [[ -n "${TARGET_ARG}" ]] || die "pass --target DEVICE"
   [[ "${PROFILE}" == "desktop" || "${PROFILE}" == "minimal" ]] || die "--profile must be desktop or minimal"
   [[ "${FINALIZE_MODE}" == "online" || "${FINALIZE_MODE}" == "offline" ]] || die "internal error: bad finalization mode"
+  [[ "${COPY_PROGRESS}" == "periodic" || "${COPY_PROGRESS}" == "detailed" || "${COPY_PROGRESS}" == "never" ]] || die "--copy-progress must be periodic, detailed, or never"
   [[ "${PROMPT_PASSWORD}" -eq 0 || -z "${PASSWORD_HASH}" ]] || die "--prompt-password and --password-hash are mutually exclusive"
   [[ "${NO_USER}" -eq 0 || -z "${NEW_USER}" ]] || die "--no-user cannot be combined with --user"
   [[ "${NO_USER}" -eq 0 || "${PROMPT_PASSWORD}" -eq 0 ]] || die "--no-user cannot be combined with --prompt-password"
@@ -346,6 +352,10 @@ cleanup_image_mounts() {
 cleanup() {
   local exit_code=$?
   set +e
+  if [[ -n "${ACTIVE_RSYNC_PID}" ]] && kill -0 "${ACTIVE_RSYNC_PID}" 2>/dev/null; then
+    kill "${ACTIVE_RSYNC_PID}" 2>/dev/null
+    wait "${ACTIVE_RSYNC_PID}" 2>/dev/null
+  fi
   restore_chroot_resolver
   cleanup_mounts
   cleanup_image_mounts
@@ -620,6 +630,73 @@ mount_target() {
   record_mount "${TARGET_MNT}/boot/efi"
 }
 
+format_bytes() {
+  local bytes="$1"
+  if command -v numfmt >/dev/null 2>&1; then
+    numfmt --to=iec --suffix=B "${bytes}" 2>/dev/null && return 0
+  fi
+  printf '%s bytes\n' "${bytes}"
+}
+
+estimate_copy_size() {
+  local source_dir="$1"
+  du -sb "${source_dir}" 2>/dev/null | awk '{print $1}'
+}
+
+print_copy_status() {
+  local started_at="$1"
+  local now elapsed
+
+  now="$(date +%s)"
+  elapsed=$((now - started_at))
+  info "Still copying... elapsed $((elapsed / 60))m$((elapsed % 60))s."
+}
+
+rsync_copy_to_target() {
+  local source_dir="$1" description="$2" estimated_bytes estimated_size
+  local rsync_info="stats2"
+  local rsync_pid started_at rsync_status
+
+  estimated_bytes="$(estimate_copy_size "${source_dir}")"
+  if [[ -n "${estimated_bytes}" ]]; then
+    estimated_size="$(format_bytes "${estimated_bytes}")"
+    info "${description} copy size is about ${estimated_size}."
+  else
+    info "${description} copy size could not be estimated."
+  fi
+  info "This is usually the longest step. On typical external USB storage it can take 10-90 minutes depending on target speed, source media, and host USB port."
+
+  case "${COPY_PROGRESS}" in
+    detailed)
+      info "Detailed copy progress is enabled; rsync will update the same terminal line while files are copied."
+      rsync -aAX --numeric-ids --info="${rsync_info},progress2" "${source_dir}"/ "${TARGET_MNT}"/
+      ;;
+    periodic)
+      info "Periodic copy status is enabled; a short update will print every ${COPY_STATUS_INTERVAL}s."
+      started_at="$(date +%s)"
+      rsync -aAX --numeric-ids --info="${rsync_info}" "${source_dir}"/ "${TARGET_MNT}"/ &
+      rsync_pid=$!
+      ACTIVE_RSYNC_PID="${rsync_pid}"
+      while kill -0 "${rsync_pid}" 2>/dev/null; do
+        sleep "${COPY_STATUS_INTERVAL}"
+        if kill -0 "${rsync_pid}" 2>/dev/null; then
+          print_copy_status "${started_at}"
+        fi
+      done
+      set +e
+      wait "${rsync_pid}"
+      rsync_status=$?
+      set -e
+      ACTIVE_RSYNC_PID=""
+      return "${rsync_status}"
+      ;;
+    never)
+      info "Copy progress is disabled. The next rsync summary appears after the copy finishes."
+      rsync -aAX --numeric-ids --info="${rsync_info}" "${source_dir}"/ "${TARGET_MNT}"/
+      ;;
+  esac
+}
+
 mount_and_copy_source() {
   local lowerdir="" layer_count i src dest mp
   IMAGE_WORK_DIR="$(mktemp -d /tmp/ubuntu-external-image.XXXXXX)"
@@ -637,7 +714,7 @@ mount_and_copy_source() {
 
   if ((layer_count == 1)); then
     info "Copying Ubuntu filesystem to target..."
-    rsync -aAX --numeric-ids --info=stats2 "${IMAGE_WORK_DIR}/layers/00"/ "${TARGET_MNT}"/
+    rsync_copy_to_target "${IMAGE_WORK_DIR}/layers/00" "Ubuntu filesystem"
   else
     for ((i = layer_count - 1; i >= 0; i--)); do
       mp="${IMAGE_WORK_DIR}/layers/$(printf '%02d' "${i}")"
@@ -649,7 +726,7 @@ mount_and_copy_source() {
     done
     mount -t overlay overlay -o "lowerdir=${lowerdir}" "${IMAGE_WORK_DIR}/merged"
     info "Copying merged Ubuntu filesystem to target..."
-    rsync -aAX --numeric-ids --info=stats2 "${IMAGE_WORK_DIR}/merged"/ "${TARGET_MNT}"/
+    rsync_copy_to_target "${IMAGE_WORK_DIR}/merged" "Merged Ubuntu filesystem"
   fi
   cleanup_image_mounts
 }
