@@ -8,6 +8,12 @@ Installs Ubuntu Desktop amd64 from a local ISO or mounted installer source onto 
 
 This script is destructive. It repartitions and formats the target disk.
 
+## When To Use This
+
+If you just want a bootable Ubuntu installer or live USB, use Ubuntu's official [USB installation media docs](https://help.ubuntu.com/community/Installation/FromUSBStick). This project is for creating a full installed Ubuntu Desktop system on an external drive from an ISO, with portable UEFI/Secure Boot bootloader setup and safety checks.
+
+I built this because some USB/NVMe enclosures can expose storage geometry that trips up the normal Ubuntu installer partitioning path. In my case, the goal was a fast USB4 NVMe enclosure that could boot the same development environment on my desktop or laptop, without constantly reconciling drift between two separate installs. This script aims to make that kind of portable, full-speed external Ubuntu install repeatable.
+
 ## Agent-Guided Install
 
 If you want Claude Code, Codex, OpenCode, or another local coding agent to walk you through the install, paste this into the agent:
