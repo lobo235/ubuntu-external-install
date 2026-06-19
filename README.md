@@ -1,6 +1,6 @@
 # Ubuntu External Drive Installer
 
-[![Synthetic tests](https://github.com/lobo235/ubuntu-external-install/actions/workflows/synthetic-tests.yml/badge.svg)](https://github.com/lobo235/ubuntu-external-install/actions/workflows/synthetic-tests.yml)
+[![Synthetic tests](https://github.com/lobo235/ubuntu-external-install/workflows/Synthetic%20tests/badge.svg)](https://github.com/lobo235/ubuntu-external-install/actions/workflows/synthetic-tests.yml)
 [![ShellCheck](https://img.shields.io/badge/ShellCheck-enabled-brightgreen)](https://www.shellcheck.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
