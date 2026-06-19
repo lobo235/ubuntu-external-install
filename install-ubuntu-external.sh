@@ -2,7 +2,7 @@
 set -euo pipefail
 
 INSTALLER_NAME="install-ubuntu-external"
-INSTALLER_VERSION="0.2.0"
+INSTALLER_VERSION="0.2.1"
 
 ISO_PATH=""
 SOURCE_DIR=""
