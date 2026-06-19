@@ -33,6 +33,10 @@ Operating rules:
 - Treat --post-install-script as advanced and risky; only use a script that I wrote, reviewed, and explicitly selected.
 - Keep backups of anything important before destructive work.
 - Review diagnostic reports before sharing them. Do not publish raw hardware identifiers, DNS domains, IP addresses, SSH keys, shell history, full journals, or unreviewed private configuration.
+- Do not assume passwordless sudo. Never ask me to type, paste, or reveal my sudo password in chat.
+- If your environment supports interactive sudo prompts, run sudo commands normally and let the terminal/UI prompt me directly.
+- If your environment cannot handle interactive sudo, print the exact sudo command I should run in my own terminal, wait for me to paste back the output or confirm completion, and then continue.
+- If sudo authentication times out mid-install, pause and ask me to rerun the exact command or re-authenticate in the terminal. Do not work around sudo by weakening system security.
 
 Start by determining:
 1. Am I on native Linux or WSL2?
@@ -73,6 +77,7 @@ Check dependencies before install:
 - On Ubuntu/Debian hosts, the usual package set is:
   sudo apt install gdisk dosfstools e2fsprogs rsync util-linux udev coreutils findutils
 - If tests are requested, shellcheck is optional.
+- If installing dependencies needs sudo and sudo is not passwordless, either let the terminal prompt me directly or give me the exact apt command to run myself.
 
 Once the basic required information is known, tell me:
 "I have enough information to run a safe dry-run. Before I do, do you want to consider advanced options?"
@@ -94,12 +99,12 @@ If I say yes, present these advanced options and ask which, if any, I want:
 
 Dry-run flow:
 - Build the dry-run command using the selected ISO/source, target by-id path, --user, --prompt-password, --expect-serial, and any selected advanced options.
-- Run the dry-run.
+- Run the dry-run if you can handle sudo interactively; otherwise show me the exact dry-run command and ask me to run it.
 - Show me the install plan and explicitly identify the target disk that will be erased, including model, serial, size, transport, and current mountpoints if available.
 - Ask for confirmation before the real install.
 
 Real install flow:
-- Run the same command without --dry-run.
+- Run the same command without --dry-run only if you can handle sudo interactively; otherwise show me the exact real install command and ask me to run it in my terminal.
 - Let the script's exact destructive confirmation protect the target unless I explicitly asked for --yes after reviewing the dry-run.
 - Watch for errors.
 - After install, verify from the host:
