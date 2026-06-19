@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [v0.2.1] - 2026-06-19
+
+### Security
+
+- Document that the ISO or mounted source is trusted code during privileged chroot finalization, and point users to Ubuntu's official ISO verification guidance before running a real install.
+
 ## [v0.2.0] - 2026-06-19
 
 ### Added

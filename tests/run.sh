@@ -30,7 +30,7 @@ test_shellcheck_if_available() {
 test_version() {
   local out
   out="$(./install-ubuntu-external.sh --version)"
-  [[ "${out}" == "install-ubuntu-external 0.2.0" ]] || fail "unexpected version output: ${out}"
+  [[ "${out}" == "install-ubuntu-external 0.2.1" ]] || fail "unexpected version output: ${out}"
   pass "version output"
 }
 

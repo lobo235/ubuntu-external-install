@@ -31,6 +31,7 @@ Operating rules:
 - Do not allow --no-user or --allow-locked-user for a normal desktop install.
 - Do not use --allow-non-usb unless I explicitly identify a non-USB target and accept the added risk.
 - Treat --post-install-script as advanced and risky; only use a script that I wrote, reviewed, and explicitly selected.
+- Treat the ISO or mounted source as trusted code. Before the real install, verify that the ISO came from Ubuntu or another trusted source, and recommend Ubuntu's official verification guide: https://ubuntu.com/tutorials/how-to-verify-ubuntu. Do not proceed with an unknown, unverified, or user-suspicious ISO/source.
 - Keep backups of anything important before destructive work.
 - Review diagnostic reports before sharing them. Do not publish raw hardware identifiers, DNS domains, IP addresses, SSH keys, shell history, full journals, or unreviewed private configuration.
 - Do not assume passwordless sudo. Never ask me to type, paste, or reveal my sudo password in chat.

@@ -16,11 +16,19 @@ The installer includes safeguards such as whole-disk checks, USB/removable targe
 
 Before running a real install:
 
+- Use only a trusted Ubuntu ISO or mounted installer source.
+- Verify downloaded ISOs before use. Follow Ubuntu's official verification guide: <https://ubuntu.com/tutorials/how-to-verify-ubuntu>.
 - Prefer a stable `/dev/disk/by-id/...` target path.
 - Run `--dry-run` first.
 - Use `--expect-serial` when the target exposes a serial number.
 - Read the printed target disk, model, serial, size, and partition plan.
 - Keep backups of anything important.
+
+## Trusted Installer Sources
+
+Treat the ISO or mounted source as trusted code. The installer copies that system to the target and then performs privileged chroot finalization with host `/dev`, `/proc`, `/sys`, and `/run` bindings. That is necessary to install boot packages and configure the installed system, but it means a malicious source can execute with root-level impact during installation.
+
+Do not run this installer against ISOs from unknown mirrors, modified installer trees, or mounted sources you did not create or review. Prefer official Ubuntu release images and verify their checksums and signatures before use.
 
 ## Diagnostic Reports
 

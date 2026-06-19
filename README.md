@@ -8,6 +8,12 @@ Installs Ubuntu Desktop amd64 from a local ISO or mounted installer source onto 
 
 This script is destructive. It repartitions and formats the target disk.
 
+## Trusted Source Requirement
+
+Use only Ubuntu ISOs or mounted installer sources that you trust. During finalization, this installer enters the copied system with root privileges to install boot packages, create the user, and configure GRUB. A malicious ISO or mounted source should be treated as root-code execution on the host.
+
+Before running a real install, verify the ISO with Ubuntu's official [download verification guide](https://ubuntu.com/tutorials/how-to-verify-ubuntu). At minimum, check the ISO SHA256 checksum against Ubuntu's published checksum for that release. For stronger authenticity checking, verify the signed `SHA256SUMS` file before trusting the checksum.
+
 ## When To Use This
 
 If you just want a bootable Ubuntu installer or live USB, use Ubuntu's official [USB installation media docs](https://help.ubuntu.com/community/Installation/FromUSBStick). This project is for creating a full installed Ubuntu Desktop system on an external drive from an ISO, with portable UEFI/Secure Boot bootloader setup and safety checks.
