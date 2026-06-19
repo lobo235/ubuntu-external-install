@@ -971,8 +971,9 @@ EOF
   rm -f "${TARGET_MNT}/var/lib/dbus/machine-id"
 
   mkdir -p "${TARGET_MNT}/etc/default/grub.d"
-  cat >"${TARGET_MNT}/etc/default/grub.d/99-usb-root.cfg" <<EOF
+cat >"${TARGET_MNT}/etc/default/grub.d/99-usb-root.cfg" <<EOF
 GRUB_CMDLINE_LINUX_DEFAULT="quiet splash rootdelay=${ROOTDELAY}"
+GRUB_TIMEOUT_STYLE=menu
 GRUB_TIMEOUT=10
 GRUB_RECORDFAIL_TIMEOUT=10
 GRUB_DISABLE_OS_PROBER=true
