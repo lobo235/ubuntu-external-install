@@ -13,10 +13,12 @@ This script is destructive. It repartitions and formats the target disk.
 If you want Claude Code, Codex, OpenCode, or another local coding agent to walk you through the install, paste this into the agent:
 
 ```text
-Help me install Ubuntu 26.04 Desktop amd64 onto an external drive using https://github.com/lobo235/ubuntu-external-install. Download the repository, read AGENT_INSTALL_PROMPT.md and SECURITY.md, and follow them exactly. Ask me the required questions one at a time, identify the target disk safely, run a dry-run first, use the safest target guards available, and do not run destructive commands until I explicitly confirm the dry-run plan.
+Help me install Ubuntu 26.04 Desktop amd64 onto an external drive using https://github.com/lobo235/ubuntu-external-install. Download the repository, read AGENT_INSTALL_PROMPT.md and SECURITY.md, and follow them exactly. Ask me the required questions one at a time, identify the target disk safely, handle sudo/password prompts without asking me to reveal passwords in chat, run a dry-run first, use the safest target guards available, and do not run destructive commands until I explicitly confirm the dry-run plan.
 ```
 
 The full agent prompt lives in [`AGENT_INSTALL_PROMPT.md`](AGENT_INSTALL_PROMPT.md).
+
+The agent-guided flow does not require passwordless sudo. If your agent cannot handle interactive sudo prompts, it should prepare exact commands for you to run in your own terminal.
 
 ## Supported Scope
 
