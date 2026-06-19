@@ -37,6 +37,9 @@ Operating rules:
 - If your environment supports interactive sudo prompts, run sudo commands normally and let the terminal/UI prompt me directly.
 - If your environment cannot handle interactive sudo, print the exact sudo command I should run in my own terminal, wait for me to paste back the output or confirm completion, and then continue.
 - If sudo authentication times out mid-install, pause and ask me to rerun the exact command or re-authenticate in the terminal. Do not work around sudo by weakening system security.
+- Determine whether your harness can support interactive terminal input before running commands that require it.
+- Interactive commands include sudo authentication, the installer's exact destructive confirmation (`ERASE <target-disk>`), and `--prompt-password` password entry for the new Ubuntu user.
+- If your harness cannot support interactive terminal input, do not start those commands yourself. Instead, print the exact command for me to run in my own terminal, explain what prompts I should expect, and ask me to report back whether it succeeded and paste any error output.
 
 Start by determining:
 1. Am I on native Linux or WSL2?
@@ -99,12 +102,13 @@ If I say yes, present these advanced options and ask which, if any, I want:
 
 Dry-run flow:
 - Build the dry-run command using the selected ISO/source, target by-id path, --user, --prompt-password, --expect-serial, and any selected advanced options.
-- Run the dry-run if you can handle sudo interactively; otherwise show me the exact dry-run command and ask me to run it.
+- Run the dry-run if you can handle interactive sudo; otherwise show me the exact dry-run command and ask me to run it.
 - Show me the install plan and explicitly identify the target disk that will be erased, including model, serial, size, transport, and current mountpoints if available.
 - Ask for confirmation before the real install.
 
 Real install flow:
-- Run the same command without --dry-run only if you can handle sudo interactively; otherwise show me the exact real install command and ask me to run it in my terminal.
+- Run the same command without --dry-run only if you can handle all required interactive input, including sudo, the `ERASE <target-disk>` confirmation, and `--prompt-password`.
+- If you cannot handle interactive input, show me the exact real install command and ask me to run it in my terminal. Tell me to expect the `ERASE <target-disk>` confirmation and the new-user password prompt, then report back whether it completed or paste any error output.
 - Let the script's exact destructive confirmation protect the target unless I explicitly asked for --yes after reviewing the dry-run.
 - Watch for errors.
 - After install, verify from the host:
