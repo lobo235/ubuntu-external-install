@@ -152,6 +152,45 @@ test_chroot_resolver_restore() {
   pass "chroot resolver restore"
 }
 
+test_grub_dropin_uses_visible_menu() {
+  local tmp
+  tmp="$(mktemp -d)"
+  mkdir -p "${tmp}/etc/default/grub.d" "${tmp}/etc/cloud" "${tmp}/var/log/ubuntu-external-installer" "${tmp}/var/lib/dbus"
+  : >"${tmp}/var/lib/dbus/machine-id"
+  : >"${tmp}/etc/resolv.conf"
+
+  (
+    # shellcheck disable=SC1091
+    source ./install-ubuntu-external.sh
+    TARGET_MNT="${tmp}"
+    TARGET_HOSTNAME="ubuntu-external"
+    UBUNTU_CODENAME="resolute"
+    UBUNTU_VERSION="26.04"
+    PROFILE="desktop"
+    ROOTDELAY="10"
+    KEEP_CLOUD_INIT=0
+    INSTALL_LOG="${tmp}/install.log"
+    NEW_USER="tester"
+    mkdir -p "${tmp}/etc/apt"
+    : >"${INSTALL_LOG}"
+    part_path() { echo "/dev/fake$1"; }
+    blkid() {
+      if [[ "$*" == *"/dev/fake1"* ]]; then
+        echo "ESP-UUID"
+      else
+        echo "ROOT-UUID"
+      fi
+    }
+    write_system_config
+    grep -q '^GRUB_TIMEOUT_STYLE=menu$' "${tmp}/etc/default/grub.d/99-usb-root.cfg"
+    grep -q '^GRUB_TIMEOUT=10$' "${tmp}/etc/default/grub.d/99-usb-root.cfg"
+    grep -q '^GRUB_RECORDFAIL_TIMEOUT=10$' "${tmp}/etc/default/grub.d/99-usb-root.cfg"
+  )
+
+  rm -rf "${tmp}"
+  pass "grub visible menu drop-in"
+}
+
 test_option_validation_rejects_unsafe_values() {
   (
     # shellcheck disable=SC1091
@@ -197,6 +236,7 @@ test_layered_casper_detection
 test_minimal_layered_detection
 test_efi_grub_fallback_config
 test_chroot_resolver_restore
+test_grub_dropin_uses_visible_menu
 test_option_validation_rejects_unsafe_values
 
 printf '\nAll non-destructive tests passed.\n'
