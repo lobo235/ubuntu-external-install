@@ -18,7 +18,7 @@ Help me install Ubuntu 26.04 Desktop amd64 onto an external drive using https://
 
 The full agent prompt lives in [`AGENT_INSTALL_PROMPT.md`](AGENT_INSTALL_PROMPT.md).
 
-The agent-guided flow does not require passwordless sudo. If your agent cannot handle interactive sudo prompts, it should prepare exact commands for you to run in your own terminal.
+The agent-guided flow does not require passwordless sudo. If your agent cannot handle interactive terminal prompts, such as sudo authentication, the destructive `ERASE <disk>` confirmation, or `--prompt-password`, it should prepare exact commands for you to run in your own terminal and ask you to report the result back.
 
 ## Supported Scope
 
