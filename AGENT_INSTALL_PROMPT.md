@@ -40,6 +40,7 @@ Operating rules:
 - Determine whether your harness can support interactive terminal input before running commands that require it.
 - Interactive commands include sudo authentication, the installer's exact destructive confirmation (`ERASE <target-disk>`), and `--prompt-password` password entry for the new Ubuntu user.
 - If your harness cannot support interactive terminal input, do not start those commands yourself. Instead, print the exact command for me to run in my own terminal, explain what prompts I should expect, and ask me to report back whether it succeeded and paste any error output.
+- For the real install command, choose copy progress based on who will run it. If I will run the final command in my own terminal, include `--copy-progress detailed` so I can see rsync's live progress during the long filesystem copy. If you will run the final command in your own agent terminal, include `--copy-progress periodic` or `--copy-progress never` to keep the transcript readable; prefer `periodic` unless I explicitly ask for quiet output.
 
 Start by determining:
 1. Am I on native Linux or WSL2?
@@ -107,8 +108,8 @@ Dry-run flow:
 - Ask for confirmation before the real install.
 
 Real install flow:
-- Run the same command without --dry-run only if you can handle all required interactive input, including sudo, the `ERASE <target-disk>` confirmation, and `--prompt-password`.
-- If you cannot handle interactive input, show me the exact real install command and ask me to run it in my terminal. Tell me to expect the `ERASE <target-disk>` confirmation and the new-user password prompt, then report back whether it completed or paste any error output.
+- Run the same command without --dry-run only if you can handle all required interactive input, including sudo, the `ERASE <target-disk>` confirmation, and `--prompt-password`. When you run it in your agent terminal, add `--copy-progress periodic` unless I explicitly request `--copy-progress never`.
+- If you cannot handle interactive input, show me the exact real install command and ask me to run it in my terminal. Add `--copy-progress detailed` to that user-run command. Tell me to expect the `ERASE <target-disk>` confirmation, the new-user password prompt, and live copy progress during the longest step, then report back whether it completed or paste any error output.
 - Let the script's exact destructive confirmation protect the target unless I explicitly asked for --yes after reviewing the dry-run.
 - Watch for errors.
 - After install, verify from the host:

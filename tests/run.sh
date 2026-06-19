@@ -30,7 +30,7 @@ test_shellcheck_if_available() {
 test_version() {
   local out
   out="$(./install-ubuntu-external.sh --version)"
-  [[ "${out}" == "install-ubuntu-external 0.1.0" ]] || fail "unexpected version output: ${out}"
+  [[ "${out}" == "install-ubuntu-external 0.2.0" ]] || fail "unexpected version output: ${out}"
   pass "version output"
 }
 
@@ -223,6 +223,17 @@ test_option_validation_rejects_unsafe_values() {
     BOOTLOADER_ID="../evil"
     validate_options
   ) >/dev/null 2>&1 && fail "unsafe bootloader id was accepted"
+
+  (
+    # shellcheck disable=SC1091
+    source ./install-ubuntu-external.sh
+    ISO_PATH="/tmp/fake.iso"
+    TARGET_ARG="/dev/fake"
+    NEW_USER="safeuser"
+    PROMPT_PASSWORD=1
+    COPY_PROGRESS="sometimes"
+    validate_options
+  ) >/dev/null 2>&1 && fail "invalid copy progress mode was accepted"
 
   pass "unsafe option validation"
 }
